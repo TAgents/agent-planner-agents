@@ -49,19 +49,34 @@ async def run_coordination_agent():
         # Import coordination agent factory
         from coordination.agent import create_coordinator_agent
         
+        print("\nInitializing Coordination Agent with full delegation capabilities...")
+        print("This may take a moment as all specialized agents are being initialized.")
+        
         # Create the agent and get its exit stack
         agent, exit_stack = await create_coordinator_agent()
         
         # Run the agent interactively
         await run_agent_interactive(agent, exit_stack, "Coordination Agent")
         
+    except ValueError as e:
+        print(f"\nConfiguration Error in Coordination Agent: {e}")
+        print("\nPlease check your .env file for correct configuration values.")
+        sys.exit(1)
+    except FileNotFoundError as e:
+        print(f"\nFile Not Found Error in Coordination Agent: {e}")
+        print("\nPlease check that all MCP server paths exist and are correctly configured in your .env file.")
+        sys.exit(1)
     except Exception as e:
-        print(f"\nError initializing Coordination Agent: {e}")
+        print(f"\nUnexpected Error initializing Coordination Agent: {e}")
         print("\nPlease check your .env file for correct configuration values:")
         print("  - PLANNING_MCP_PATH: Path to the planning MCP server")
         print("  - PLANNING_API_URL: URL of the planning API (default: http://localhost:3000)")
         print("  - PLANNING_API_TOKEN: API token for the planning system")
         print("  - GOOGLE_API_KEY: API key for the Google AI model")
+        print("  - CONTEXT7_MCP_PATH: Path to the Context7 MCP server")
+        print("  - FILESYSTEM_MCP_PATH: Path to the filesystem MCP server")
+        print("  - PLAYWRIGHT_MCP_PATH: Path to the Playwright MCP server")
+        print("  - WEBSEARCH_MCP_PATH: Path to the web search MCP server")
         sys.exit(1)
 
 async def run_backend_dev_agent():
@@ -76,11 +91,158 @@ async def run_backend_dev_agent():
         # Run the agent interactively
         await run_agent_interactive(agent, exit_stack, "Backend Developer Agent")
         
+    except ValueError as e:
+        print(f"\nConfiguration Error in Backend Developer Agent: {e}")
+        print("\nPlease check your .env file for correct configuration values.")
+        sys.exit(1)
+    except FileNotFoundError as e:
+        print(f"\nFile Not Found Error in Backend Developer Agent: {e}")
+        print("\nPlease check that all MCP server paths exist and are correctly configured in your .env file.")
+        sys.exit(1)
     except Exception as e:
-        print(f"\nError initializing Backend Developer Agent: {e}")
+        print(f"\nUnexpected Error initializing Backend Developer Agent: {e}")
         print("\nPlease check your .env file for correct configuration values:")
         print("  - FILESYSTEM_MCP_PATH: Path to the filesystem MCP server")
         print("  - CONTEXT7_MCP_PATH: Path to the Context7 MCP server")
+        print("  - GOOGLE_API_KEY: API key for the Google AI model")
+        sys.exit(1)
+
+async def run_frontend_dev_agent():
+    """Initialize and run the Frontend Developer Agent."""
+    try:
+        # Import frontend developer agent factory
+        from agents.frontend_dev.agent import create_frontend_dev_agent
+        
+        # Create the agent and get its exit stack
+        agent, exit_stack = await create_frontend_dev_agent()
+        
+        # Run the agent interactively
+        await run_agent_interactive(agent, exit_stack, "Frontend Developer Agent")
+        
+    except ValueError as e:
+        print(f"\nConfiguration Error in Frontend Developer Agent: {e}")
+        print("\nPlease check your .env file for correct configuration values.")
+        sys.exit(1)
+    except FileNotFoundError as e:
+        print(f"\nFile Not Found Error in Frontend Developer Agent: {e}")
+        print("\nPlease check that all MCP server paths exist and are correctly configured in your .env file.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\nUnexpected Error initializing Frontend Developer Agent: {e}")
+        print("\nPlease check your .env file for correct configuration values:")
+        print("  - FILESYSTEM_MCP_PATH: Path to the filesystem MCP server")
+        print("  - CONTEXT7_MCP_PATH: Path to the Context7 MCP server")
+        print("  - GOOGLE_API_KEY: API key for the Google AI model")
+        sys.exit(1)
+
+async def run_designer_agent():
+    """Initialize and run the Designer Agent."""
+    try:
+        # Import designer agent factory
+        from agents.designer.agent import create_designer_agent
+        
+        # Create the agent and get its exit stack
+        agent, exit_stack = await create_designer_agent()
+        
+        # Run the agent interactively
+        await run_agent_interactive(agent, exit_stack, "Designer Agent")
+        
+    except ValueError as e:
+        print(f"\nConfiguration Error in Designer Agent: {e}")
+        print("\nPlease check your .env file for correct configuration values.")
+        sys.exit(1)
+    except FileNotFoundError as e:
+        print(f"\nFile Not Found Error in Designer Agent: {e}")
+        print("\nPlease check that all MCP server paths exist and are correctly configured in your .env file.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\nUnexpected Error initializing Designer Agent: {e}")
+        print("\nPlease check your .env file for correct configuration values:")
+        print("  - FILESYSTEM_MCP_PATH: Path to the filesystem MCP server")
+        print("  - GOOGLE_API_KEY: API key for the Google AI model")
+        sys.exit(1)
+
+async def run_research_agent():
+    """Initialize and run the Research Agent."""
+    try:
+        # Import research agent factory
+        from agents.research.agent import create_research_agent
+        
+        # Create the agent and get its exit stack
+        agent, exit_stack = await create_research_agent()
+        
+        # Run the agent interactively
+        await run_agent_interactive(agent, exit_stack, "Research Agent")
+        
+    except ValueError as e:
+        print(f"\nConfiguration Error in Research Agent: {e}")
+        print("\nPlease check your .env file for correct configuration values.")
+        sys.exit(1)
+    except FileNotFoundError as e:
+        print(f"\nFile Not Found Error in Research Agent: {e}")
+        print("\nPlease check that all MCP server paths exist and are correctly configured in your .env file.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\nUnexpected Error initializing Research Agent: {e}")
+        print("\nPlease check your .env file for correct configuration values:")
+        print("  - WEBSEARCH_MCP_PATH: Path to the web search MCP server")
+        print("  - GOOGLE_API_KEY: API key for the Google AI model")
+        sys.exit(1)
+
+async def run_tester_agent():
+    """Initialize and run the Tester Agent."""
+    try:
+        # Import tester agent factory
+        from agents.tester.agent import create_tester_agent
+        
+        # Create the agent and get its exit stack
+        agent, exit_stack = await create_tester_agent()
+        
+        # Run the agent interactively
+        await run_agent_interactive(agent, exit_stack, "Tester Agent")
+        
+    except ValueError as e:
+        print(f"\nConfiguration Error in Tester Agent: {e}")
+        print("\nPlease check your .env file for correct configuration values.")
+        sys.exit(1)
+    except FileNotFoundError as e:
+        print(f"\nFile Not Found Error in Tester Agent: {e}")
+        print("\nPlease check that all MCP server paths exist and are correctly configured in your .env file.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\nUnexpected Error initializing Tester Agent: {e}")
+        print("\nPlease check your .env file for correct configuration values:")
+        print("  - PLAYWRIGHT_MCP_PATH: Path to the Playwright MCP server")
+        print("  - FILESYSTEM_MCP_PATH: Path to the filesystem MCP server")
+        print("  - GOOGLE_API_KEY: API key for the Google AI model")
+        sys.exit(1)
+
+async def run_plan_optimizer_agent():
+    """Initialize and run the Plan Optimizer Agent."""
+    try:
+        # Import plan optimizer agent factory
+        from agents.plan_optimizer.agent import create_plan_optimizer_agent
+        
+        # Create the agent and get its exit stack
+        agent, exit_stack = await create_plan_optimizer_agent()
+        
+        # Run the agent interactively
+        await run_agent_interactive(agent, exit_stack, "Plan Optimizer Agent")
+        
+    except ValueError as e:
+        print(f"\nConfiguration Error in Plan Optimizer Agent: {e}")
+        print("\nPlease check your .env file for correct configuration values.")
+        sys.exit(1)
+    except FileNotFoundError as e:
+        print(f"\nFile Not Found Error in Plan Optimizer Agent: {e}")
+        print("\nPlease check that all MCP server paths exist and are correctly configured in your .env file.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\nUnexpected Error initializing Plan Optimizer Agent: {e}")
+        print("\nPlease check your .env file for correct configuration values:")
+        print("  - PLANNING_MCP_PATH: Path to the planning MCP server")
+        print("  - PLANNING_API_URL: URL of the planning API (default: http://localhost:3000)")
+        print("  - PLANNING_API_TOKEN: API token for the planning system")
         print("  - GOOGLE_API_KEY: API key for the Google AI model")
         sys.exit(1)
 
@@ -95,9 +257,16 @@ async def run_selected_agent(agent_type):
         await run_coordination_agent()
     elif agent_type == 'backend':
         await run_backend_dev_agent()
-    elif agent_type in ['frontend', 'designer', 'research', 'tester', 'optimizer']:
-        print(f"\n{agent_type.capitalize()} Developer Agent not fully implemented yet")
-        print(f"Please implement the create_{agent_type}_agent function in agents/{agent_type}/agent.py")
+    elif agent_type == 'frontend':
+        await run_frontend_dev_agent()
+    elif agent_type == 'designer':
+        await run_designer_agent()
+    elif agent_type == 'research':
+        await run_research_agent()
+    elif agent_type == 'tester':
+        await run_tester_agent()
+    elif agent_type == 'optimizer':
+        await run_plan_optimizer_agent()
     else:
         print(f"Unknown agent type: {agent_type}")
 

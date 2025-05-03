@@ -27,13 +27,23 @@ async def create_plan_optimizer_agent():
     exit_stack = AsyncExitStack()
     await exit_stack.__aenter__()
     
+    # Initialize empty tool list
+    all_tools = []
+    
     try:
         # Define agent LLM
         optimizer_llm = LiteLlm(model="gemini/gemini-2.5-flash-preview-04-17", api_key=os.environ.get("GOOGLE_API_KEY"))
 
-        # Setup MCP tools
-        planning_tools, planning_stack = await setup_planning_mcp_tools()
-        await exit_stack.enter_async_context(planning_stack)
+        # Setup MCP tools with graceful error handling
+        try:
+            print("--- Setting up planning tools for Plan Optimizer Agent ---")
+            planning_tools, planning_stack = await setup_planning_mcp_tools()
+            await exit_stack.enter_async_context(planning_stack)
+            all_tools.extend(planning_tools)
+            print(f"--- Successfully set up {len(planning_tools)} planning tools ---")
+        except Exception as e:
+            print(f"Warning: Failed to initialize planning tools: {e}")
+            print("Plan Optimizer Agent will continue without planning tools")
 
         # Create the Plan Optimizer agent
         optimizer_agent = Agent(
@@ -42,7 +52,7 @@ async def create_plan_optimizer_agent():
             model=optimizer_llm,
             instruction=(
                 "You are a Plan Optimizer Agent specializing in improving and organizing plan structures. "
-                "You have access to the planning system through MCP tools."
+                f"You have access to {len(all_tools)} tools for plan management."
                 "\n\nYour responsibilities include:"
                 "\n1. Identifying and removing redundant or unnecessary tasks"
                 "\n2. Creating missing tasks and dependencies"
@@ -56,7 +66,7 @@ async def create_plan_optimizer_agent():
                 "\n\nYou should focus on creating clear, efficient, and logical plan structures "
                 "that maintain all necessary functionality while removing unnecessary complexity."
             ),
-            tools=planning_tools,
+            tools=all_tools,
         )
 
         return optimizer_agent, exit_stack

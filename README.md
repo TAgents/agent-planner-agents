@@ -4,15 +4,22 @@ This project implements a multiagent system using Google's Agent Development Kit
 
 ## Overview
 
-The system features specialized agents for different development roles, each with access to role-specific MCP servers:
+The system features specialized agents for different development roles, each with access to role-specific MCP servers. The Coordination Agent serves as the central orchestrator, delegating tasks to specialized agents and managing overall workflow.
 
-- **Coordination Agent**: User communication and workflow orchestration, manages plan structure
-- **Backend Developer Agent**: Server-side code implementation with filesystem and documentation access
-- **Frontend Developer Agent**: Client-side implementation with UI-specific MCP integrations
-- **Designer Agent**: Visual and UX design with design-specific tools
-- **Research Agent**: Information gathering with web search capabilities
-- **Tester Agent**: Quality verification with Playwright integration
-- **Plan Optimizer Agent**: Plan structure improvement and organization
+### Agent Architecture
+
+- **Coordination Agent**: Central orchestrator with access to all specialized agents as tools
+  - Delegates tasks to appropriate specialized agents based on the nature of the request
+  - Manages project plans through the planning system
+  - Provides unified interface for users
+
+- **Specialized Agents**:
+  - **Backend Developer Agent**: Server-side code implementation with filesystem and documentation access
+  - **Frontend Developer Agent**: Client-side implementation with UI-specific MCP integrations
+  - **Designer Agent**: Visual and UX design with design-specific tools
+  - **Research Agent**: Information gathering with web search capabilities
+  - **Tester Agent**: Quality verification with Playwright integration
+  - **Plan Optimizer Agent**: Plan structure improvement and organization
 
 ## Project Status
 
@@ -22,32 +29,48 @@ The system features specialized agents for different development roles, each wit
   - Coordination Agent implemented with planning tools
   - Basic planning operations tested
 
-- **Phase 2: Developer Agents Implementation** 🔄
-  - Backend Developer Agent implementation in progress
-  - Frontend Developer Agent (not started)
-  - Developer Agent Collaboration (not started)
+- **Phase 2: Developer Agents Implementation** ✅
+  - Backend Developer Agent implemented with filesystem and Context7 tools
+  - Frontend Developer Agent implemented with filesystem and Context7 tools
+  - Delegation patterns established between Coordination Agent and specialized agents
 
-- **Phase 3-6**: Support Agents, Plan Optimization, Integration, Documentation (not started)
+- **Phase 3: Support Agents Implementation** ✅
+  - Designer Agent implemented with filesystem access
+  - Research Agent implemented with web search capabilities
+  - Tester Agent implemented with Playwright and filesystem access
+
+- **Phase 4: Plan Optimization** ✅
+  - Plan Optimizer Agent implemented with planning system access
+
+- **Phase 5: Integration and Testing** ✅
+  - End-to-end workflows established across all agents
+  - Delegation from Coordination Agent to specialized agents implemented
+
+- **Phase 6: Documentation and Deployment** 🔄
+  - Documentation created
+  - System ready for testing and refinement
 
 ## Project Structure
 
 ```
 agent-planner-agents/
-├── agents/                     # Agent implementations
+├── coordination/               # Coordination Agent implementation
+│   ├── __init__.py             # Exports the async factory and root_agent
+│   └── agent.py                # Main coordination agent with delegation
+├── agents/                     # Specialized agent implementations
 │   ├── backend_dev/            # Backend Developer Agent
 │   ├── frontend_dev/           # Frontend Developer Agent
 │   ├── designer/               # Designer Agent
 │   ├── research/               # Research Agent
 │   ├── tester/                 # Tester Agent
 │   └── plan_optimizer/         # Plan Optimizer Agent
-├── coordination/               # Coordination Agent implementation
 ├── tools/                      # Common tools used by multiple agents
 │   └── mcp_tools.py            # MCP integration utilities
 ├── tests/                      # Test scripts
 │   └── test_planning.py        # Tests for basic planning operations
 ├── run.py                      # Main script for running the multiagent system
 ├── direct_tool_calls.py        # Utility for direct MCP tool calls
-└── test_mcp_tools.py           # Script for testing MCP connection
+└── test_mcp_tools.py           # Script for testing MCP connections
 ```
 
 ## Prerequisites
@@ -96,10 +119,14 @@ cp .env.example .env
 # IMPORTANT: Update all paths to point to the actual MCP server directories
 ```
 
-5. Test the MCP connection:
+5. Test the MCP connections:
 
 ```bash
-python test_mcp_tools.py
+# Test a specific MCP server
+python test_mcp_tools.py --server planning
+
+# Test all MCP servers
+python test_mcp_tools.py --server all
 ```
 
 ## Configuration
@@ -117,117 +144,87 @@ The `.env` file contains important configuration values required for the system 
 
 ## Running the System
 
-1. Start the Coordination Agent with planning tools:
+### 1. Run the Coordination Agent with the Complete Multiagent System
 
 ```bash
 python run.py
 ```
 
-2. To run a specific agent for testing:
+This runs the Coordination Agent with all specialized agents as tools, enabling full delegation.
+
+### 2. Run a Specific Agent for Testing
 
 ```bash
 python run.py --agent [backend|frontend|designer|research|tester|optimizer]
 ```
 
-3. To use direct MCP tool calls for specific planning operations:
+### 3. Use Direct MCP Tool Calls
 
 ```bash
 python direct_tool_calls.py
 ```
 
-## Testing
-
-Run the MCP tools test to verify the connection to the planning system:
+### 4. Use the ADK Web Interface (if ADK CLI is installed)
 
 ```bash
-python test_mcp_tools.py
+adk web
 ```
 
-Run the planning operations test to verify the Coordination Agent's ability to interact with the planning system:
+## Testing
+
+### 1. Test MCP Connections
+
+```bash
+python test_mcp_tools.py --server [planning|context7|filesystem|playwright|websearch|all]
+```
+
+### 2. Test Planning Operations
 
 ```bash
 python -m tests.test_planning
 ```
 
-## Development Workflow
+## Usage Examples
 
-### Adding a New Agent
+### 1. Planning Operations
 
-1. Create a new directory under `agents/` (e.g., `agents/new_agent/`)
-2. Create these files:
-   - `__init__.py`: Exports the async factory function
-   - `agent.py`: Implements the agent using the ADK framework
+- **List plans**: "Show me all available plans"
+- **Create a plan**: "Create a new plan called 'Project Alpha' for developing a mobile app"
+- **Add phases**: "Add a Design phase to Project Alpha"
+- **Add tasks**: "Create a task for wireframing in the Design phase"
+- **Update status**: "Mark the wireframing task as in progress"
 
-3. Example agent implementation:
+### 2. Development Tasks
 
-```python
-# agents/new_agent/agent.py
-import os
-from contextlib import AsyncExitStack
-from google.adk.agents import Agent
-from google.adk.models.lite_llm import LiteLlm
-from dotenv import load_dotenv
+- **Backend development**: "Create a Node.js API for user authentication"
+- **Frontend development**: "Design a responsive login form using React"
+- **Design request**: "Create a color scheme for our e-commerce site"
 
-# Import necessary MCP tools
-from tools.mcp_tools import setup_required_mcp_tools
+### 3. Research and Information
 
-# Load environment variables
-load_dotenv()
+- **Market research**: "Research the top competitors in the project management space"
+- **Technical research**: "Find the best React state management libraries in 2025"
 
-async def create_new_agent():
-    """
-    Creates a new agent with required tools.
-    
-    Returns:
-        Tuple of (agent, exit_stack)
-    """
-    # Manage exit stack for async operations
-    exit_stack = AsyncExitStack()
-    await exit_stack.__aenter__()
-    
-    try:
-        # Setup required MCP tools
-        tools, tool_stack = await setup_required_mcp_tools()
-        await exit_stack.enter_async_context(tool_stack)
-        
-        # Create the agent
-        agent = Agent(
-            name="new_agent",
-            description="Description of the new agent",
-            model=LiteLlm(model="gemini/gemini-2.5-flash-preview-04-17", api_key=os.environ.get("GOOGLE_API_KEY")),
-            instruction="Detailed instructions for the agent...",
-            tools=tools,
-        )
-        
-        return agent, exit_stack
-        
-    except Exception as e:
-        # Clean up the exit stack if there was an error
-        await exit_stack.__aexit__(type(e), e, e.__traceback__)
-        raise
-```
+### 4. Testing and Quality
 
-4. Update `__init__.py`:
+- **Website testing**: "Test our login page for accessibility issues"
+- **Performance testing**: "Check the response time of our API endpoints"
 
-```python
-# agents/new_agent/__init__.py
-from .agent import create_new_agent
-```
+### 5. Plan Optimization
 
-5. Update `run.py` to include the new agent type
+- **Analyze plan**: "Analyze our Project Alpha plan for completeness"
+- **Suggest improvements**: "Suggest improvements to our development workflow"
 
-### Integrating with MCP Servers
+## Delegation Architecture
 
-1. Identify the required MCP tools for the agent
-2. Use the appropriate setup functions from `tools/mcp_tools.py`:
-   - `setup_planning_mcp_tools()` - For planning system access
-   - `setup_context7_mcp_tools()` - For documentation access
-   - `setup_filesystem_mcp_tools()` - For filesystem access
-   - `setup_playwright_mcp_tools()` - For browser automation
-   - `setup_web_search_mcp_tools()` - For web search
+The Coordination Agent has access to all specialized agents as tools. When a user sends a request, the Coordination Agent:
 
-3. Update the agent's async factory function to use these tools
-4. Properly manage the exit stack for clean resource handling
+1. Analyzes the request to determine which specialized agent should handle it
+2. Delegates the task to the appropriate agent
+3. Receives the response from the specialized agent
+4. Formats and returns the final response to the user
+
+This delegation pattern allows each agent to focus on its specific domain while providing a unified interface for users.
 
 ## MCP Integration
 
@@ -238,22 +235,6 @@ This system leverages the Model Context Protocol (MCP) for standardized communic
 - **Filesystem MCP**: For code management
 - **Playwright MCP**: For automated testing
 - **Web Search MCP**: For research and information gathering
-
-## Best Practices
-
-- Always use async patterns for agent creation and MCP tool setup
-- Properly manage exit stacks to ensure resources are cleaned up
-- Use environment variables for configuration, not hardcoded paths
-- Validate required environment variables before attempting connections
-- Handle errors properly and provide helpful error messages
-
-## Next Steps
-
-- Complete implementation of specialized agents
-- Integrate agents with their respective MCP servers
-- Establish collaboration patterns between agents
-- Test end-to-end workflows
-- Create comprehensive documentation
 
 ## License
 

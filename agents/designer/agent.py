@@ -27,13 +27,23 @@ async def create_designer_agent():
     exit_stack = AsyncExitStack()
     await exit_stack.__aenter__()
     
+    # Initialize empty tool list
+    all_tools = []
+    
     try:
         # Define agent LLM
         designer_llm = LiteLlm(model="gemini/gemini-2.5-flash-preview-04-17", api_key=os.environ.get("GOOGLE_API_KEY"))
 
-        # Setup MCP tools
-        filesystem_tools, filesystem_stack = await setup_filesystem_mcp_tools()
-        await exit_stack.enter_async_context(filesystem_stack)
+        # Setup MCP tools with graceful error handling
+        try:
+            print("--- Setting up filesystem tools for Designer Agent ---")
+            filesystem_tools, filesystem_stack = await setup_filesystem_mcp_tools()
+            await exit_stack.enter_async_context(filesystem_stack)
+            all_tools.extend(filesystem_tools)
+            print(f"--- Successfully set up {len(filesystem_tools)} filesystem tools ---")
+        except Exception as e:
+            print(f"Warning: Failed to initialize filesystem tools: {e}")
+            print("Designer Agent will continue without filesystem tools")
 
         # Create the Designer agent
         designer_agent = Agent(
@@ -42,7 +52,7 @@ async def create_designer_agent():
             model=designer_llm,
             instruction=(
                 "You are a Designer Agent specializing in visual and UX design. "
-                "You have access to the filesystem for storing and retrieving design assets."
+                f"You have access to {len(all_tools)} tools for filesystem access."
                 "\n\nYour responsibilities include:"
                 "\n1. Creating design mockups and prototypes"
                 "\n2. Developing visual assets and style guides"
@@ -56,7 +66,7 @@ async def create_designer_agent():
                 "\n\nYou should prioritize user-centered design principles, "
                 "accessibility, consistency, and visual appeal in all your work."
             ),
-            tools=filesystem_tools,
+            tools=all_tools,
         )
 
         return designer_agent, exit_stack

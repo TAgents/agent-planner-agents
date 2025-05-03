@@ -27,19 +27,33 @@ async def create_tester_agent():
     exit_stack = AsyncExitStack()
     await exit_stack.__aenter__()
     
+    # Initialize empty tool list
+    all_tools = []
+    
     try:
         # Define agent LLM
         tester_llm = LiteLlm(model="gemini/gemini-2.5-flash-preview-04-17", api_key=os.environ.get("GOOGLE_API_KEY"))
 
-        # Setup MCP tools
-        playwright_tools, playwright_stack = await setup_playwright_mcp_tools()
-        await exit_stack.enter_async_context(playwright_stack)
+        # Setup MCP tools with graceful error handling
+        try:
+            print("--- Setting up Playwright tools for Tester Agent ---")
+            playwright_tools, playwright_stack = await setup_playwright_mcp_tools()
+            await exit_stack.enter_async_context(playwright_stack)
+            all_tools.extend(playwright_tools)
+            print(f"--- Successfully set up {len(playwright_tools)} Playwright tools ---")
+        except Exception as e:
+            print(f"Warning: Failed to initialize Playwright tools: {e}")
+            print("Tester Agent will continue without Playwright tools")
         
-        filesystem_tools, filesystem_stack = await setup_filesystem_mcp_tools()
-        await exit_stack.enter_async_context(filesystem_stack)
-        
-        # Combine all tools
-        all_tools = playwright_tools + filesystem_tools
+        try:
+            print("--- Setting up filesystem tools for Tester Agent ---")
+            filesystem_tools, filesystem_stack = await setup_filesystem_mcp_tools()
+            await exit_stack.enter_async_context(filesystem_stack)
+            all_tools.extend(filesystem_tools)
+            print(f"--- Successfully set up {len(filesystem_tools)} filesystem tools ---")
+        except Exception as e:
+            print(f"Warning: Failed to initialize filesystem tools: {e}")
+            print("Tester Agent will continue without filesystem tools")
 
         # Create the Tester agent
         tester_agent = Agent(
@@ -48,7 +62,7 @@ async def create_tester_agent():
             model=tester_llm,
             instruction=(
                 "You are a Tester Agent specializing in quality verification using automated testing tools. "
-                "You have access to Playwright for browser automation and the filesystem for test script management."
+                f"You have access to {len(all_tools)} tools for browser automation and filesystem access."
                 "\n\nYour responsibilities include:"
                 "\n1. Generating and executing test cases"
                 "\n2. Performing automated UI and API testing"

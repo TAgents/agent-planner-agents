@@ -27,19 +27,33 @@ async def create_frontend_dev_agent():
     exit_stack = AsyncExitStack()
     await exit_stack.__aenter__()
     
+    # Initialize empty tool list
+    all_tools = []
+    
     try:
         # Define agent LLM
         frontend_llm = LiteLlm(model="gemini/gemini-2.5-flash-preview-04-17", api_key=os.environ.get("GOOGLE_API_KEY"))
 
-        # Setup MCP tools
-        filesystem_tools, filesystem_stack = await setup_filesystem_mcp_tools()
-        await exit_stack.enter_async_context(filesystem_stack)
+        # Setup MCP tools with graceful error handling
+        try:
+            print("--- Setting up filesystem tools for Frontend Developer Agent ---")
+            filesystem_tools, filesystem_stack = await setup_filesystem_mcp_tools()
+            await exit_stack.enter_async_context(filesystem_stack)
+            all_tools.extend(filesystem_tools)
+            print(f"--- Successfully set up {len(filesystem_tools)} filesystem tools ---")
+        except Exception as e:
+            print(f"Warning: Failed to initialize filesystem tools: {e}")
+            print("Frontend Developer Agent will continue without filesystem tools")
         
-        context7_tools, context7_stack = await setup_context7_mcp_tools()
-        await exit_stack.enter_async_context(context7_stack)
-        
-        # Combine all tools
-        all_tools = filesystem_tools + context7_tools
+        try:
+            print("--- Setting up Context7 tools for Frontend Developer Agent ---")
+            context7_tools, context7_stack = await setup_context7_mcp_tools()
+            await exit_stack.enter_async_context(context7_stack)
+            all_tools.extend(context7_tools)
+            print(f"--- Successfully set up {len(context7_tools)} Context7 tools ---")
+        except Exception as e:
+            print(f"Warning: Failed to initialize Context7 tools: {e}")
+            print("Frontend Developer Agent will continue without Context7 tools")
 
         # Create the Frontend Developer agent
         frontend_agent = Agent(
@@ -48,7 +62,7 @@ async def create_frontend_dev_agent():
             model=frontend_llm,
             instruction=(
                 "You are a Frontend Developer Agent specializing in client-side implementation. "
-                "You have access to the filesystem and documentation through MCP servers."
+                f"You have access to {len(all_tools)} tools for filesystem and documentation access."
                 "\n\nYour responsibilities include:"
                 "\n1. Generating React/Angular/Vue components and interfaces"
                 "\n2. Implementing responsive layouts and user interfaces"
