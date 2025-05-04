@@ -1,182 +1,141 @@
-"""
-Coordination Agent for ADK Multiagent System.
-
-This agent manages user communication and delegates tasks to specialized agents.
-It has direct access to the planning system through the MCP server and can delegate
-tasks to specialized agents based on the nature of the request.
-"""
+# coordination/agent.py
 
 import os
 from contextlib import AsyncExitStack
+
 from google.adk.agents import Agent
 from google.adk.models.lite_llm import LiteLlm
 from dotenv import load_dotenv
 
-# Import specialized agent factories
+# --- Import AgentTool and other agent factories ---
+from google.adk.tools.agent_tool import AgentTool
 from agents.backend_dev.agent import create_backend_dev_agent
 from agents.frontend_dev.agent import create_frontend_dev_agent
 from agents.designer.agent import create_designer_agent
-from agents.research.agent import create_research_agent
+# --- REMOVE RESEARCH AGENT IMPORT ---
+# from agents.research.agent import create_research_agent
 from agents.tester.agent import create_tester_agent
 from agents.plan_optimizer.agent import create_plan_optimizer_agent
+
+# --- Import CustomGoogleSearchTool ---
+from agents.research.google_search_custom_tool import CustomGoogleSearchTool
 
 # Import MCP tools
 from tools.mcp_tools import setup_planning_mcp_tools
 
-# Load environment variables
 load_dotenv()
 
 async def create_coordinator_agent():
-    """
-    Creates the Coordination agent that manages user communication and delegates to specialized agents.
-    
-    Returns:
-        Tuple of (coordinator agent, exit_stack)
-    """
-    # Manage multiple exit stacks for async sub-agents
     exit_stack = AsyncExitStack()
     await exit_stack.__aenter__()
-    
-    # Initialize lists to track successfully created agents
-    specialized_agents = []
-    
+    all_coordinator_tools = []
+
     try:
-        print("--- Initializing Coordination Agent with specialized agents ---")
-        
-        # Connect to the planning MCP server first
+        print("--- Initializing Coordination Agent ---")
+        # ... (connect to planning MCP, add planning_tools) ...
         print("--- Connecting to planning-system-mcp server ---")
-        planning_mcp_path = os.environ.get("PLANNING_MCP_PATH")
-        if not planning_mcp_path:
-            raise ValueError("PLANNING_MCP_PATH environment variable must be set")
-        
         planning_tools, planning_stack = await setup_planning_mcp_tools()
         await exit_stack.enter_async_context(planning_stack)
-        
-        # Print the tools discovered
+        all_coordinator_tools.extend(planning_tools)
         print(f"--- Connected to planning-system-mcp. Discovered {len(planning_tools)} tool(s). ---")
-        
-        # Initialize specialized agents with graceful error handling
-        specialized_agent_factories = [
-            ("Backend Developer Agent", create_backend_dev_agent),
-            ("Frontend Developer Agent", create_frontend_dev_agent),
-            ("Designer Agent", create_designer_agent),
-            ("Research Agent", create_research_agent),
-            ("Tester Agent", create_tester_agent),
-            ("Plan Optimizer Agent", create_plan_optimizer_agent)
-        ]
-        
-        for agent_name, factory_func in specialized_agent_factories:
-            try:
-                print(f"--- Creating {agent_name} ---")
-                agent, agent_stack = await factory_func()
-                await exit_stack.enter_async_context(agent_stack)
-                specialized_agents.append(agent)
-                print(f"--- Successfully created {agent_name} ---")
-            except Exception as e:
-                print(f"Warning: Failed to initialize {agent_name}: {e}")
-                print(f"Coordination Agent will continue without {agent_name}")
-        
-        print(f"--- Total resources available: {len(planning_tools)} planning tools and {len(specialized_agents)} specialized agents ---")
 
-        # Define a multi-model coordinator LLM
+
+        # --- Add Custom Google Search Tool Directly to Coordinator ---
+        print("--- Attempting to set up Custom Google Search tool for Coordinator ---")
+        try:
+            google_api_key = os.environ.get("GOOGLE_API_KEY")
+            programmable_search_engine_id = os.environ.get("PROGRAMMABLE_SEARCH_ENGINE_ID")
+            if not google_api_key or not programmable_search_engine_id:
+                print("Warning: API Key or CX ID missing. Google Search tool disabled.")
+            else:
+                search_tool_instance = CustomGoogleSearchTool(
+                    api_key=google_api_key,
+                    search_engine_id=programmable_search_engine_id
+                )
+                all_coordinator_tools.append(search_tool_instance)
+                print(f"--- Successfully added '{search_tool_instance.name}' tool to Coordinator ---")
+        except Exception as e:
+            print(f"ERROR: Failed to initialize CustomGoogleSearchTool for Coordinator: {e}")
+        # --- End Adding Search Tool ---
+
+
+        # --- Initialize and Wrap OTHER Specialized Agents ---
+        specialized_agent_factories = [
+            ("Backend Developer Agent", create_backend_dev_agent, "backend_developer_agent"),
+            ("Frontend Developer Agent", create_frontend_dev_agent, "frontend_developer_agent"),
+            ("Designer Agent", create_designer_agent, "designer_agent"),
+            # --- REMOVE RESEARCH AGENT FROM THIS LIST ---
+            ("Tester Agent", create_tester_agent, "tester_agent"),
+            ("Plan Optimizer Agent", create_plan_optimizer_agent, "plan_optimizer_agent")
+        ]
+        agent_descriptions_map = {} # Still useful for other agents
+
+        for display_name, factory_func, agent_id in specialized_agent_factories:
+            try:
+                print(f"--- Creating {display_name} ---")
+                agent_instance, agent_stack = await factory_func()
+                await exit_stack.enter_async_context(agent_stack)
+                wrapped_agent_tool = AgentTool(agent=agent_instance)
+                all_coordinator_tools.append(wrapped_agent_tool)
+                agent_descriptions_map[agent_id] = agent_instance.description
+                print(f"--- Successfully created and wrapped agent '{agent_id}' using AgentTool ---")
+            except Exception as e:
+                print(f"Warning: Failed to initialize or wrap {display_name} ({agent_id}): {e}")
+
+        print(f"--- Total tools/agents available to Coordinator: {len(all_coordinator_tools)} ---")
+
         coordinator_llm = LiteLlm(model="gemini/gemini-2.5-flash-preview-04-17", api_key=os.environ.get("GOOGLE_API_KEY"))
 
-        # Create the agent instruction, listing only the available specialized agents
-        agent_names = [agent.name for agent in specialized_agents]
-        agent_descriptions = []
-        
-        if "backend_developer_agent" in agent_names:
-            agent_descriptions.append("'backend_developer_agent' - For backend code development, database design, and server-side implementation")
-        
-        if "frontend_developer_agent" in agent_names:
-            agent_descriptions.append("'frontend_developer_agent' - For frontend/UI development, React components, and client-side implementation")
-        
-        if "designer_agent" in agent_names:
-            agent_descriptions.append("'designer_agent' - For visual and UX design, mockups, and style guides")
-        
-        if "research_agent" in agent_names:
-            agent_descriptions.append("'research_agent' - For gathering information, market analysis, and technical research")
-        
-        if "tester_agent" in agent_names:
-            agent_descriptions.append("'tester_agent' - For automated testing, quality verification, and bug reporting")
-        
-        if "plan_optimizer_agent" in agent_names:
-            agent_descriptions.append("'plan_optimizer_agent' - For optimizing and refining project plans")
-        
-        # Dynamic instruction based on available agents
-        specialized_agents_instruction = "\n\nYou have access to these specialized agents for delegation:\n" + "\n".join([f"{i+1}. {desc}" for i, desc in enumerate(agent_descriptions)]) if agent_descriptions else ""
-        
-        delegation_workflow = "\n2. DELEGATION WORKFLOW:"
-        if "backend_developer_agent" in agent_names:
-            delegation_workflow += "\n   - For backend tasks: Delegate to the 'backend_developer_agent' for server-side code and DB designs"
-        
-        if "frontend_developer_agent" in agent_names:
-            delegation_workflow += "\n   - For frontend tasks: Delegate to the 'frontend_developer_agent' for UI components"
-        
-        if "designer_agent" in agent_names:
-            delegation_workflow += "\n   - For design tasks: Delegate to the 'designer_agent' for visual and UX design"
-        
-        if "research_agent" in agent_names:
-            delegation_workflow += "\n   - For research needs: Delegate to the 'research_agent' for gathering information"
-        
-        if "tester_agent" in agent_names:
-            delegation_workflow += "\n   - For testing needs: Delegate to the 'tester_agent' for verification"
-        
-        if "plan_optimizer_agent" in agent_names:
-            delegation_workflow += "\n   - For plan improvement: Delegate to the 'plan_optimizer_agent'"
-        
-        if not agent_names:
-            delegation_workflow = "\n2. NOTE: No specialized agents are currently available. Only planning operations are supported."
+        # --- Adjust Instructions for Coordinator Handling Search ---
+        available_agent_tools_instruction = "\nYou have access to these specialized agents, which you can call as tools:\n"
+        delegation_workflow_instruction = "\n2. DELEGATION WORKFLOW (USING AGENTS AS TOOLS):"
+        search_handling_instruction = "\n3. RESEARCH WORKFLOW: If the user asks for research or current information, use the 'custom_google_search' tool directly to find relevant web pages. Summarize the findings for the user."
+        planning_workflow_instruction = "\n4. PLAN MANAGEMENT WORKFLOW:" # Renumber
+        agent_tool_names = []
+
+        for agent_tool in all_coordinator_tools:
+            if isinstance(agent_tool, AgentTool) and agent_tool.name in agent_descriptions_map: # Check if it's a wrapped agent we know
+                 agent_name = agent_tool.name
+                 agent_tool_names.append(agent_name)
+                 agent_desc = agent_descriptions_map[agent_name]
+                 available_agent_tools_instruction += f"- '{agent_name}': {agent_desc}\n"
+                 delegation_workflow_instruction += f"\n   - For {agent_name.replace('_agent','').replace('_',' ')} tasks: Call the '{agent_name}' tool with the specific request/query."
+
+        if not agent_tool_names:
+            # Adjust if only planning/search tools are left
+            available_agent_tools_instruction = "\nNOTE: No specialized agent tools (like backend/frontend) are available."
+            delegation_workflow_instruction = "\n2. DELEGATION: No specialized agents available."
+
 
         # Create the Coordinator agent
         coordinator = Agent(
             name="coordination_agent",
-            description="Coordinates user communication and delegates tasks to specialized agents for software development.",
+            description="Coordinates user communication, performs web searches, manages plans, and delegates tasks to specialized agents.",
             model=coordinator_llm,
             instruction=(
-                "You are the main coordination agent for a software development system. "
-                "You handle user communication and delegate tasks to specialized agents:"
-                f"{specialized_agents_instruction}"
-                "\n\nYou also manage project plans using the planning system tools. "
-                "When users ask about project plans, use the appropriate planning tools to create, update, or query plans."
-                "\n\nHOW DELEGATION WORKS: When you need to delegate a task to a specialized agent, "
-                "you should think about which agent is most appropriate for the task based on its domain. "
-                "The ADK system will automatically route your response to the appropriate sub-agent when you "
-                "mention that you are delegating to a specific agent. You don't need to use any special syntax "
-                "or call tools - just clearly state which agent you're delegating to in your response."
-                "\n\nFOLLOW THESE WORKFLOW STEPS:\n"
-                "1. ANALYZE USER REQUEST: Determine if the request is about:\n"
-                "   - Project planning (creating, updating, viewing plans)\n"
-                "   - Development task (backend, frontend, design)\n"
-                "   - Research or information gathering\n"
-                "   - Testing or quality verification\n"
-                "   - Plan optimization or improvement\n"
-                f"{delegation_workflow}"
-                "\n\n3. PLAN MANAGEMENT WORKFLOW:\n"
-                "   - For creating a new plan: Use 'create_plan' with title, description, and status\n"
-                "   - For viewing plans: Use 'list_plans' or 'find_plans' or 'get_plan_by_name'\n"
-                "   - For plan details: Use 'get_plan_nodes' to see structure\n"
-                "   - For creating phases and tasks: Use 'create_node' with appropriate parameters\n"
-                "   - For updating task status: Use 'update_node_status'\n"
-                "   - For adding documentation: Use 'add_artifact'\n"
-                "\n4. MAINTAIN CONTEXT: Keep track of the ongoing project, recent activities, and agent interactions"
-                "\n5. PROVIDE UNIFIED UPDATES: Summarize progress and integrate feedback from specialized agents"
-                "\nAlways think step-by-step, first understanding the user request, then determining the appropriate action "
-                "path, and finally executing with the right tools or agent delegation."
-                "\n\nNOTE ABOUT RESEARCH AGENT: The Research Agent may have limited search capabilities. "
-                "If a user asks for current information and the Research Agent indicates limitations, "
-                "acknowledge this and suggest that the user consult external sources for the most up-to-date information."
+                "You are the main coordination agent. You handle user communication."
+                " You manage project plans using planning tools, PERFORM WEB SEARCHES using the 'custom_google_search' tool, "
+                "AND delegate tasks to specialized agents by calling them directly as tools (if available)."
+                f"{available_agent_tools_instruction}"
+                "\n\nWORKFLOW STEPS:\n"
+                "1. ANALYZE USER REQUEST: Determine if it's for planning, research, or requires a specialized agent."
+                f"{delegation_workflow_instruction}"
+                f"{search_handling_instruction}" # Add the specific research workflow
+                f"{planning_workflow_instruction}\n" # Add planning workflow
+                "   - Use 'create_plan', 'list_plans', 'find_plans', 'get_plan_nodes', etc., as needed."
+                # ... (rest of planning workflow) ...
+                "\n5. MAINTAIN CONTEXT & PROVIDE UPDATES."
+                "\nAlways think step-by-step. If research is needed, call 'custom_google_search'. If delegation is needed, call the appropriate agent tool."
             ),
-            tools=planning_tools,
-            sub_agents=specialized_agents,
+            tools=all_coordinator_tools, # Pass list including planning tools, SEARCH tool & AgentTool instances
         )
-        
+
+        print(f"--- Coordinator Agent created with tools: {[getattr(t, 'name', 'Unknown') for t in all_coordinator_tools]} ---")
         return coordinator, exit_stack
-        
+
     except Exception as e:
-        # Clean up the exit stack if there was an error
+        print(f"FATAL ERROR during Coordination Agent creation: {e}")
         await exit_stack.__aexit__(type(e), e, e.__traceback__)
         raise
 
-# Expose the awaitable agent factory for ADK discovery
 root_agent = create_coordinator_agent()

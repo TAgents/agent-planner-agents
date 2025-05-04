@@ -1,3 +1,4 @@
-google-adk
+google-adk==0.4.0
 python-dotenv
 litellm
+google-api-python-client
