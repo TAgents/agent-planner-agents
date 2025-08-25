@@ -39,7 +39,7 @@ async def create_research_agent():
     tool_name = None # To store the actual tool name
 
     try:
-        research_llm = LiteLlm(model="gemini/gemini-2.5-flash-preview-04-17", api_key=os.environ.get("GOOGLE_API_KEY"))
+        research_llm = LiteLlm(model="gemini/gemini-2.5-flash-lite", api_key=os.environ.get("GOOGLE_API_KEY"))
 
         # --- Setup Custom Google Search Tool ---
         if custom_search_tool_class:

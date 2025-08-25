@@ -50,6 +50,10 @@ The system features specialized agents for different development roles, each wit
   - Documentation created
   - System ready for testing and refinement
 
+## How to Run
+
+To use the Table Name Converter tool, open the `web/index.html` file in your web browser. Please note that for this version, the conversion logic is embedded directly within the HTML file.
+
 ## Project Structure
 
 ```
@@ -98,7 +102,7 @@ cd agent-planner-agents
 ```bash
 python -m venv .venv
 # On Windows
-.\.venv\Scripts\activate
+.\\.venv\\Scripts\\activate
 # On macOS/Linux
 source .venv/bin/activate
 ```
@@ -165,8 +169,7 @@ python direct_tool_calls.py
 ```
 
 ### 4. Use the ADK Web Interface (if ADK CLI is installed)
-
-```bash
+\n```bash
 adk web
 ```
 

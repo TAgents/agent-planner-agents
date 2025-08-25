@@ -63,7 +63,7 @@ async def test_mcp_connection(server_type):
             test_agent = Agent(
                 name="test_agent",
                 description=f"A test agent for {server_type} MCP tools",
-                model=LiteLlm(model="gemini/gemini-2.5-flash-preview-04-17", api_key=os.environ.get("GOOGLE_API_KEY")),
+                model=LiteLlm(model="gemini/gemini-2.5-flash-lite", api_key=os.environ.get("GOOGLE_API_KEY")),
                 instruction=f"You are a test agent for {server_type} MCP tools.",
                 tools=tools,
             )

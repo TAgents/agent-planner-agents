@@ -33,7 +33,7 @@ async def create_backend_dev_agent():
     
     try:
         # Define agent LLM
-        backend_llm = LiteLlm(model="gemini/gemini-2.5-flash-preview-04-17", api_key=os.environ.get("GOOGLE_API_KEY"))
+        backend_llm = LiteLlm(model="gemini/gemini-2.5-flash-lite", api_key=os.environ.get("GOOGLE_API_KEY"))
 
         # Setup MCP tools with graceful error handling
         try:

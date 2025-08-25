@@ -84,7 +84,7 @@ async def create_coordinator_agent():
 
         print(f"--- Total tools/agents available to Coordinator: {len(all_coordinator_tools)} ---")
 
-        coordinator_llm = LiteLlm(model="gemini/gemini-2.5-flash-preview-04-17", api_key=os.environ.get("GOOGLE_API_KEY"))
+        coordinator_llm = LiteLlm(model="gemini/gemini-1.5-flash", api_key=os.environ.get("GOOGLE_API_KEY"))
 
         # --- Adjust Instructions for Coordinator Handling Search ---
         available_agent_tools_instruction = "\nYou have access to these specialized agents, which you can call as tools:\n"

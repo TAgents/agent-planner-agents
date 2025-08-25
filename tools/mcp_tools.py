@@ -43,6 +43,7 @@ async def setup_planning_mcp_tools():
         ],
         env={
             "API_URL": planning_api_url,
+            "USER_API_TOKEN": planning_api_token,
             "API_TOKEN": planning_api_token
         }
     )
