@@ -35,9 +35,30 @@ async def run_agent_interactive(agent, exit_stack, agent_name):
             if user_input.lower() in ['exit', 'quit']:
                 break
                 
-            # Process the user input with the agent
-            response = await agent.generate_content(user_input)
-            print(f"\n{agent_name}: {response.text}\n")
+            # Process the user input with the agent - call it directly
+            try:
+                response = await agent(user_input)
+                
+                # Handle different response formats
+                if hasattr(response, 'text'):
+                    print(f"\n{agent_name}: {response.text}\n")
+                elif hasattr(response, 'content'):
+                    if isinstance(response.content, list) and len(response.content) > 0:
+                        # Handle list of content items
+                        content_text = ""
+                        for item in response.content:
+                            if hasattr(item, 'text'):
+                                content_text += item.text
+                            else:
+                                content_text += str(item)
+                        print(f"\n{agent_name}: {content_text}\n")
+                    else:
+                        print(f"\n{agent_name}: {response.content}\n")
+                else:
+                    print(f"\n{agent_name}: {response}\n")
+                    
+            except Exception as e:
+                print(f"\nError processing request: {e}\n")
     
     finally:
         # Clean up resources
@@ -70,13 +91,9 @@ async def run_coordination_agent():
         print(f"\nUnexpected Error initializing Coordination Agent: {e}")
         print("\nPlease check your .env file for correct configuration values:")
         print("  - PLANNING_MCP_PATH: Path to the planning MCP server")
-        print("  - PLANNING_API_URL: URL of the planning API (default: http://localhost:3000)")
+        print("  - PLANNING_API_URL: URL of the planning API")
         print("  - PLANNING_API_TOKEN: API token for the planning system")
         print("  - GOOGLE_API_KEY: API key for the Google AI model")
-        print("  - CONTEXT7_MCP_PATH: Path to the Context7 MCP server")
-        print("  - FILESYSTEM_MCP_PATH: Path to the filesystem MCP server")
-        print("  - PLAYWRIGHT_MCP_PATH: Path to the Playwright MCP server")
-        print("  - WEBSEARCH_MCP_PATH: Path to the web search MCP server")
         sys.exit(1)
 
 async def run_backend_dev_agent():
@@ -102,8 +119,6 @@ async def run_backend_dev_agent():
     except Exception as e:
         print(f"\nUnexpected Error initializing Backend Developer Agent: {e}")
         print("\nPlease check your .env file for correct configuration values:")
-        print("  - FILESYSTEM_MCP_PATH: Path to the filesystem MCP server")
-        print("  - CONTEXT7_MCP_PATH: Path to the Context7 MCP server")
         print("  - GOOGLE_API_KEY: API key for the Google AI model")
         sys.exit(1)
 
@@ -130,8 +145,6 @@ async def run_frontend_dev_agent():
     except Exception as e:
         print(f"\nUnexpected Error initializing Frontend Developer Agent: {e}")
         print("\nPlease check your .env file for correct configuration values:")
-        print("  - FILESYSTEM_MCP_PATH: Path to the filesystem MCP server")
-        print("  - CONTEXT7_MCP_PATH: Path to the Context7 MCP server")
         print("  - GOOGLE_API_KEY: API key for the Google AI model")
         sys.exit(1)
 
@@ -158,7 +171,6 @@ async def run_designer_agent():
     except Exception as e:
         print(f"\nUnexpected Error initializing Designer Agent: {e}")
         print("\nPlease check your .env file for correct configuration values:")
-        print("  - FILESYSTEM_MCP_PATH: Path to the filesystem MCP server")
         print("  - GOOGLE_API_KEY: API key for the Google AI model")
         sys.exit(1)
 
@@ -185,7 +197,6 @@ async def run_research_agent():
     except Exception as e:
         print(f"\nUnexpected Error initializing Research Agent: {e}")
         print("\nPlease check your .env file for correct configuration values:")
-        print("  - WEBSEARCH_MCP_PATH: Path to the web search MCP server")
         print("  - GOOGLE_API_KEY: API key for the Google AI model")
         sys.exit(1)
 
@@ -212,8 +223,6 @@ async def run_tester_agent():
     except Exception as e:
         print(f"\nUnexpected Error initializing Tester Agent: {e}")
         print("\nPlease check your .env file for correct configuration values:")
-        print("  - PLAYWRIGHT_MCP_PATH: Path to the Playwright MCP server")
-        print("  - FILESYSTEM_MCP_PATH: Path to the filesystem MCP server")
         print("  - GOOGLE_API_KEY: API key for the Google AI model")
         sys.exit(1)
 
@@ -241,7 +250,7 @@ async def run_plan_optimizer_agent():
         print(f"\nUnexpected Error initializing Plan Optimizer Agent: {e}")
         print("\nPlease check your .env file for correct configuration values:")
         print("  - PLANNING_MCP_PATH: Path to the planning MCP server")
-        print("  - PLANNING_API_URL: URL of the planning API (default: http://localhost:3000)")
+        print("  - PLANNING_API_URL: URL of the planning API")
         print("  - PLANNING_API_TOKEN: API token for the planning system")
         print("  - GOOGLE_API_KEY: API key for the Google AI model")
         sys.exit(1)

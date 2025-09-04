@@ -194,3 +194,46 @@ async def setup_playwright_mcp_tools():
             return tools, exit_stack
         else:
             raise ValueError(f"Could not extract tools and exit_stack from MCPToolset.from_server() result: {result}")
+
+async def setup_web_search_mcp_tools():
+    """
+    Sets up MCP tools for web search operations.
+    
+    Returns:
+        Tuple of (list of MCP tools, exit_stack) for web search.
+    """
+    print("Setting up Web Search MCP server")
+    
+    # Server parameters for the Brave Search MCP server
+    server_params = StdioServerParameters(
+        command="npx",
+        args=[
+            "-y",
+            "@modelcontextprotocol/server-brave-search"
+        ],
+        env={
+            "BRAVE_API_KEY": os.environ.get("BRAVE_API_KEY", "")
+        }
+    )
+    
+    # Create MCP toolset using the async factory method
+    result = await MCPToolset.from_server(connection_params=server_params)
+    
+    # Check the structure of the result to determine if it's a tuple or an object
+    if isinstance(result, tuple) and len(result) == 2:
+        # It's a tuple of (tools, exit_stack)
+        return result
+    else:
+        # In newer versions of MCPToolset, it might return an object
+        # with tools and exit_stack attributes
+        print(f"Warning: Unexpected return type from MCPToolset.from_server(): {type(result)}")
+        print("Attempting to extract tools and exit_stack...")
+        
+        # Try to extract tools and exit_stack from the result
+        tools = getattr(result, "tools", [])
+        exit_stack = getattr(result, "exit_stack", None)
+        
+        if tools and exit_stack:
+            return tools, exit_stack
+        else:
+            raise ValueError(f"Could not extract tools and exit_stack from MCPToolset.from_server() result: {result}")

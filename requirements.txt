@@ -2,3 +2,6 @@ google-adk==0.4.0
 python-dotenv
 litellm
 google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2

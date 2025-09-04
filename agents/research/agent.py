@@ -1,8 +1,7 @@
 """
 Research Agent for ADK Multiagent System.
 
-This agent specializes in gathering information using a custom Google Search tool.
-Uses google-adk version 0.4.0+.
+This agent specializes in gathering information with web search capabilities.
 """
 
 import os
@@ -11,116 +10,109 @@ from google.adk.agents import Agent
 from google.adk.models.lite_llm import LiteLlm
 from dotenv import load_dotenv
 
-# --- Import the Custom Tool ---
+# Import custom search tool
+from tools.google_search_tool import CustomGoogleSearchTool
+
+# Try to import MCP web search tools as fallback
 try:
-    from .google_search_custom_tool import CustomGoogleSearchTool
-    custom_search_tool_class = CustomGoogleSearchTool
-    print("--- Successfully imported CustomGoogleSearchTool ---")
-except ImportError as e:
-    custom_search_tool_class = None
-    print(f"--- Failed to import CustomGoogleSearchTool: {e} ---")
-    print("--- Research Agent will not have Google Search capability. ---")
-# --- End Import ---
+    from tools.mcp_tools import setup_web_search_mcp_tools
+    MCP_AVAILABLE = True
+except:
+    MCP_AVAILABLE = False
 
 # Load environment variables
 load_dotenv()
 
 async def create_research_agent():
     """
-    Creates the Research agent for information gathering using a custom tool.
-
+    Creates the Research agent for information gathering.
+    
     Returns:
         Tuple of (research agent, exit_stack)
     """
+    # Manage exit stack for async operations
     exit_stack = AsyncExitStack()
     await exit_stack.__aenter__()
-
-    agent_tools = []
-    tool_name = None # To store the actual tool name
-
+    
+    # Initialize empty tool list
+    all_tools = []
+    
     try:
-        research_llm = LiteLlm(model="gemini/gemini-2.5-flash-lite", api_key=os.environ.get("GOOGLE_API_KEY"))
+        # Define agent LLM
+        research_llm = LiteLlm(
+            model="gemini/gemini-1.5-flash", 
+            api_key=os.environ.get("GOOGLE_API_KEY")
+        )
 
-        # --- Setup Custom Google Search Tool ---
-        if custom_search_tool_class:
-            print("--- Attempting to set up Custom Google Search tool ---")
+        # Try to set up custom Google search tool
+        try:
+            print("--- Setting up Google Search tool for Research Agent ---")
             google_api_key = os.environ.get("GOOGLE_API_KEY")
-            programmable_search_engine_id = os.environ.get("PROGRAMMABLE_SEARCH_ENGINE_ID")
-
-            if not google_api_key:
-                print("Warning: GOOGLE_API_KEY environment variable missing. Custom Google Search tool disabled.")
-            elif not programmable_search_engine_id:
-                print("Warning: PROGRAMMABLE_SEARCH_ENGINE_ID environment variable missing. Custom Google Search tool disabled.")
+            search_engine_id = os.environ.get("GOOGLE_SEARCH_ENGINE_ID")
+            
+            if google_api_key:
+                search_tool = CustomGoogleSearchTool(
+                    api_key=google_api_key,
+                    search_engine_id=search_engine_id
+                )
+                all_tools.append(search_tool)
+                print("✓ Google Search tool initialized")
             else:
+                print("Warning: GOOGLE_API_KEY not found, search tool disabled")
+        except Exception as e:
+            print(f"Warning: Failed to initialize Google Search tool: {e}")
+            
+            # Fall back to MCP web search if available
+            if MCP_AVAILABLE and os.environ.get("BRAVE_API_KEY"):
                 try:
-                    # Instantiate the Custom Tool class, passing credentials
-                    custom_search_tool_instance = custom_search_tool_class(
-                        api_key=google_api_key,
-                        search_engine_id=programmable_search_engine_id
-                    )
-                    agent_tools.append(custom_search_tool_instance)
-                    # Get the actual tool name (should be 'custom_google_search' as defined in the class)
-                    tool_name = custom_search_tool_instance.name
-                    print(f"--- Successfully created Custom Google Search tool. Agent can call it using name: '{tool_name}' ---")
-
+                    print("Falling back to MCP web search tools...")
+                    web_search_tools, web_search_stack = await setup_web_search_mcp_tools()
+                    await exit_stack.enter_async_context(web_search_stack)
+                    all_tools.extend(web_search_tools)
+                    print(f"✓ MCP web search tools initialized ({len(web_search_tools)} tools)")
                 except Exception as e:
-                    # Catch errors during tool initialization (e.g., API client build failure)
-                    print(f"ERROR: Failed to initialize CustomGoogleSearchTool: {e}")
-                    print("--- Custom Google Search tool will be unavailable. ---")
-                    tool_name = None # Ensure tool_name is None if init fails
-        # --- End Setup Custom Google Search Tool ---
-
-        # --- Dynamically Generate Instructions ---
-        if tool_name:
-            search_instruction = (
-                f"\nWhen given a research task:"
-                f"\n1. Formulate the appropriate search query based on the request."
-                f"\n2. IMMEDIATELY call the '{tool_name}' tool with the formulated query. Do not describe your plan first, just call the tool."
-                f"\n3. Once you receive results from the '{tool_name}' tool, evaluate credibility and relevance."
-                f"\n4. Synthesize findings into clear, actionable insights."
-                f"\n5. Organize the synthesized information to address the original request comprehensively."
-                f"\n\nIMPORTANT: Always cite your sources using the URLs provided by the search results."
-                f"Provide the source URL for each piece of information extracted from the search. "
-                f"Keep direct quotes to a minimum (less than 25 words per quote) and properly attribute them. "
-                f"For longer information, provide a brief summary and direct users to the original source."
-            )
-        else:
-             # Instruction when search is not available
-            search_instruction = (
-                "\nNOTE: Web search capability is currently unavailable."
-                "\nWhen given a research task:"
-                "\n1. Analyze the research question and provide information based on your existing knowledge."
-                "\n2. Clearly state that you cannot perform a live web search."
-                "\n3. Be honest about the limitations of your knowledge."
-                "\n4. Suggest keywords or sources the user might check independently for more current information."
-            )
-        # --- End Instruction Generation ---
+                    print(f"Warning: Failed to initialize MCP web search tools: {e}")
 
         # Create the Research agent
         research_agent = Agent(
             name="research_agent",
-            description="Specializes in gathering information. May have web search capabilities via a custom tool.",
+            description="Specializes in gathering information with web search capabilities.",
             model=research_llm,
             instruction=(
-                "You are a Research Agent specializing in gathering information. "
-                "Your primary role is to find, analyze, and summarize information to inform development decisions."
-                "\n\nYour responsibilities include:"
-                "\n1. Conducting market and competitor analysis"
-                "\n2. Researching technical solutions and best practices"
-                "\n3. Finding and evaluating libraries, frameworks, and tools"
-                "\n4. Summarizing findings for other agents"
-                + search_instruction +
-                "\n\nYou should prioritize recent, authoritative sources and provide "
-                "balanced information that considers multiple perspectives when appropriate."
+                "You are a Research Agent specializing in gathering information using web search capabilities. "
+                f"You have access to {len(all_tools)} search tool(s) for finding information online.\n\n"
+                
+                "Your responsibilities include:\n"
+                "1. Conducting market and competitor analysis\n"
+                "2. Researching technical solutions and best practices\n"
+                "3. Finding and evaluating libraries, frameworks, and tools\n"
+                "4. Gathering information about current trends and technologies\n"
+                "5. Summarizing findings for other agents and users\n\n"
+                
+                "When given a research task:\n"
+                "1. Break down the research question into searchable queries\n"
+                "2. Use the google_search tool to gather relevant information\n"
+                "3. Search for multiple perspectives and sources\n"
+                "4. Evaluate the credibility and relevance of sources\n"
+                "5. Synthesize findings into clear, actionable insights\n"
+                "6. Organize information to directly address the original question\n\n"
+                
+                "Search effectively by:\n"
+                "- Using specific keywords and phrases\n"
+                "- Trying different search queries if initial results are insufficient\n"
+                "- Looking for recent and authoritative sources\n"
+                "- Cross-referencing information from multiple sources\n\n"
+                
+                "Always provide balanced information that considers multiple perspectives, "
+                "cite your sources when possible, and clearly distinguish between facts and opinions."
             ),
-            # --- Use the 'tools' parameter ---
-            tools=agent_tools, # Pass the list containing the custom tool (or empty list)
+            tools=all_tools,
         )
 
         return research_agent, exit_stack
-
+        
     except Exception as e:
-        print(f"FATAL ERROR during Research Agent creation: {e}")
+        # Clean up the exit stack if there was an error
         await exit_stack.__aexit__(type(e), e, e.__traceback__)
         raise
 

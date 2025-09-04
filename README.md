@@ -1,244 +1,317 @@
 # ADK Multiagent System with MCP Integration
 
-This project implements a multiagent system using Google's Agent Development Kit (ADK) that interacts with the planning system through MCP (Model Context Protocol).
+A sophisticated multiagent system using Google's Agent Development Kit (ADK) that coordinates specialized AI agents through the Model Context Protocol (MCP) for comprehensive software development workflows.
 
-## Overview
+## 🚀 Overview
 
-The system features specialized agents for different development roles, each with access to role-specific MCP servers. The Coordination Agent serves as the central orchestrator, delegating tasks to specialized agents and managing overall workflow.
+This system features a Coordination Agent that orchestrates specialized agents for different development roles, each with access to role-specific tools and MCP servers. The architecture enables seamless agent-to-agent communication and delegation for complex software development tasks.
 
-### Agent Architecture
+### 🤖 Agent Architecture
 
-- **Coordination Agent**: Central orchestrator with access to all specialized agents as tools
-  - Delegates tasks to appropriate specialized agents based on the nature of the request
-  - Manages project plans through the planning system
-  - Provides unified interface for users
+#### **Coordination Agent** (Central Orchestrator)
+- Manages user communication and workflow orchestration
+- Delegates tasks to specialized agents via ADK's AgentTool
+- Direct access to planning system for project management
+- Provides unified interface for all development operations
 
-- **Specialized Agents**:
-  - **Backend Developer Agent**: Server-side code implementation with filesystem and documentation access
-  - **Frontend Developer Agent**: Client-side implementation with UI-specific MCP integrations
-  - **Designer Agent**: Visual and UX design with design-specific tools
-  - **Research Agent**: Information gathering with web search capabilities
-  - **Tester Agent**: Quality verification with Playwright integration
-  - **Plan Optimizer Agent**: Plan structure improvement and organization
+#### **Specialized Agents**
 
-## Project Status
+| Agent | Role | Tools & Capabilities |
+|-------|------|---------------------|
+| **Backend Developer** | Server-side implementation | Filesystem access, documentation (Context7), API design, database schemas |
+| **Frontend Developer** | Client-side implementation | Filesystem access, UI frameworks, responsive design |
+| **Designer** | Visual and UX design | Filesystem access, design patterns, style guides |
+| **Research** | Information gathering | Google Search API, web research, market analysis |
+| **Tester** | Quality verification | Playwright automation, filesystem access, test generation |
+| **Plan Optimizer** | Plan improvement | Planning system access, structure optimization |
 
-- **Phase 1: Core Framework and Coordination Agent** ✅
-  - Project structure set up
-  - MCP integration utilities implemented
-  - Coordination Agent implemented with planning tools
-  - Basic planning operations tested
+## 📋 Prerequisites
 
-- **Phase 2: Developer Agents Implementation** ✅
-  - Backend Developer Agent implemented with filesystem and Context7 tools
-  - Frontend Developer Agent implemented with filesystem and Context7 tools
-  - Delegation patterns established between Coordination Agent and specialized agents
+- **Python 3.9+** with pip
+- **Node.js 16+** with npm/npx
+- **Google AI API Key** ([Get one here](https://ai.google.dev/))
+- **Planning System** (API and MCP server)
+- **API Token** for planning system
 
-- **Phase 3: Support Agents Implementation** ✅
-  - Designer Agent implemented with filesystem access
-  - Research Agent implemented with web search capabilities
-  - Tester Agent implemented with Playwright and filesystem access
+### Optional for Enhanced Features
+- Google Custom Search Engine ID
+- Brave Search API Key
 
-- **Phase 4: Plan Optimization** ✅
-  - Plan Optimizer Agent implemented with planning system access
+## 🛠️ Installation
 
-- **Phase 5: Integration and Testing** ✅
-  - End-to-end workflows established across all agents
-  - Delegation from Coordination Agent to specialized agents implemented
-
-- **Phase 6: Documentation and Deployment** 🔄
-  - Documentation created
-  - System ready for testing and refinement
-
-## How to Run
-
-To use the Table Name Converter tool, open the `web/index.html` file in your web browser. Please note that for this version, the conversion logic is embedded directly within the HTML file.
-
-## Project Structure
-
-```
-agent-planner-agents/
-├── coordination/               # Coordination Agent implementation
-│   ├── __init__.py             # Exports the async factory and root_agent
-│   └── agent.py                # Main coordination agent with delegation
-├── agents/                     # Specialized agent implementations
-│   ├── backend_dev/            # Backend Developer Agent
-│   ├── frontend_dev/           # Frontend Developer Agent
-│   ├── designer/               # Designer Agent
-│   ├── research/               # Research Agent
-│   ├── tester/                 # Tester Agent
-│   └── plan_optimizer/         # Plan Optimizer Agent
-├── tools/                      # Common tools used by multiple agents
-│   └── mcp_tools.py            # MCP integration utilities
-├── tests/                      # Test scripts
-│   └── test_planning.py        # Tests for basic planning operations
-├── run.py                      # Main script for running the multiagent system
-├── direct_tool_calls.py        # Utility for direct MCP tool calls
-└── test_mcp_tools.py           # Script for testing MCP connections
-```
-
-## Prerequisites
-
-- Python 3.9+ with pip
-- Node.js 16+ (for MCP servers)
-- Google AI API Key
-- Planning System MCP Server
-- Context7 MCP Server (for documentation)
-- Filesystem MCP Server (for code files)
-- Playwright MCP Server (for testing)
-- Web Search MCP Server (for research)
-
-## Installation
-
-1. Clone the repository:
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/talkingagents/agent-planner-agents.git
 cd agent-planner-agents
 ```
 
-2. Create and activate a virtual environment:
+### 2. Set Up Python Environment
 
 ```bash
+# Create virtual environment
 python -m venv .venv
-# On Windows
-.\\.venv\\Scripts\\activate
-# On macOS/Linux
+
+# Activate it
+# On Windows:
+.\.venv\Scripts\activate
+# On macOS/Linux:
 source .venv/bin/activate
-```
 
-3. Install dependencies:
-
-```bash
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-4. Set up environment variables:
+### 3. Configure Environment Variables
 
 ```bash
-# Copy the example configuration file
+# Copy example configuration
 cp .env.example .env
 
-# Edit .env with your actual values
-# IMPORTANT: Update all paths to point to the actual MCP server directories
+# Edit .env with your values
+nano .env  # or use your preferred editor
 ```
 
-5. Test the MCP connections:
+Required variables in `.env`:
+```env
+# Required
+GOOGLE_API_KEY=your_google_ai_api_key
+PLANNING_MCP_PATH=/path/to/agent-planner-mcp
+PLANNING_API_URL=http://localhost:3000
+PLANNING_API_TOKEN=your_planning_api_token
+
+# Optional but recommended
+GOOGLE_SEARCH_ENGINE_ID=your_custom_search_id
+BRAVE_API_KEY=your_brave_api_key
+WORKSPACE_PATH=/path/to/your/workspace
+```
+
+### 4. Verify Installation
 
 ```bash
-# Test a specific MCP server
-python test_mcp_tools.py --server planning
+# Run diagnostics to check system setup
+python diagnostics.py
 
-# Test all MCP servers
+# Test MCP connections
 python test_mcp_tools.py --server all
+
+# Run integration tests
+python -m tests.test_integration
 ```
 
-## Configuration
+## 🚀 Usage
 
-The `.env` file contains important configuration values required for the system to work:
-
-- **GOOGLE_API_KEY**: Your Google AI API key (required)
-- **PLANNING_MCP_PATH**: Absolute path to the planning MCP server directory (required)
-- **PLANNING_API_URL**: URL of the planning system API (default: http://localhost:3000)
-- **PLANNING_API_TOKEN**: API token for the planning system (required)
-- **CONTEXT7_MCP_PATH**: Path to the Context7 MCP server (required for documentation access)
-- **FILESYSTEM_MCP_PATH**: Path to the filesystem MCP server (required for code file access)
-- **PLAYWRIGHT_MCP_PATH**: Path to the Playwright MCP server (required for testing)
-- **WEBSEARCH_MCP_PATH**: Path to the web search MCP server (required for research)
-
-## Running the System
-
-### 1. Run the Coordination Agent with the Complete Multiagent System
+### Basic Usage - Run the Coordination Agent
 
 ```bash
 python run.py
 ```
 
-This runs the Coordination Agent with all specialized agents as tools, enabling full delegation.
+This starts the Coordination Agent with all specialized agents available as tools.
 
-### 2. Run a Specific Agent for Testing
+### Run Specific Agents
 
 ```bash
-python run.py --agent [backend|frontend|designer|research|tester|optimizer]
+# Run a specific agent independently
+python run.py --agent backend    # Backend Developer Agent
+python run.py --agent frontend   # Frontend Developer Agent
+python run.py --agent designer   # Designer Agent
+python run.py --agent research   # Research Agent
+python run.py --agent tester     # Tester Agent
+python run.py --agent optimizer  # Plan Optimizer Agent
 ```
 
-### 3. Use Direct MCP Tool Calls
+### Direct Tool Testing
 
 ```bash
+# Test direct MCP tool calls
 python direct_tool_calls.py
 ```
 
-### 4. Use the ADK Web Interface (if ADK CLI is installed)
-\n```bash
-adk web
+## 💡 Example Workflows
+
+### 1. Project Planning
+```
+User: Create a new project plan for building a task management app
+Coordinator: [Creates plan using planning tools]
+
+User: Add phases for development
+Coordinator: [Adds phases: Planning, Development, Testing, Deployment]
+
+User: Create tasks for the Planning phase
+Coordinator: [Creates tasks: Requirements, Design, Architecture]
 ```
 
-## Testing
+### 2. Development Task Delegation
+```
+User: Ask the backend developer to design a REST API for user authentication
+Coordinator: [Delegates to Backend Developer Agent]
+Backend Agent: [Designs API with endpoints, schemas, and security]
 
-### 1. Test MCP Connections
-
-```bash
-python test_mcp_tools.py --server [planning|context7|filesystem|playwright|websearch|all]
+User: Have the frontend developer create a login form
+Coordinator: [Delegates to Frontend Developer Agent]
+Frontend Agent: [Creates React component with validation]
 ```
 
-### 2. Test Planning Operations
-
-```bash
-python -m tests.test_planning
+### 3. Research and Analysis
 ```
-
-## Usage Examples
-
-### 1. Planning Operations
-
-- **List plans**: "Show me all available plans"
-- **Create a plan**: "Create a new plan called 'Project Alpha' for developing a mobile app"
-- **Add phases**: "Add a Design phase to Project Alpha"
-- **Add tasks**: "Create a task for wireframing in the Design phase"
-- **Update status**: "Mark the wireframing task as in progress"
-
-### 2. Development Tasks
-
-- **Backend development**: "Create a Node.js API for user authentication"
-- **Frontend development**: "Design a responsive login form using React"
-- **Design request**: "Create a color scheme for our e-commerce site"
-
-### 3. Research and Information
-
-- **Market research**: "Research the top competitors in the project management space"
-- **Technical research**: "Find the best React state management libraries in 2025"
+User: Research the best authentication methods for web applications
+Coordinator: [Delegates to Research Agent]
+Research Agent: [Searches and summarizes JWT, OAuth2, SAML options]
+```
 
 ### 4. Testing and Quality
+```
+User: Test the login page for accessibility issues
+Coordinator: [Delegates to Tester Agent]
+Tester Agent: [Runs Playwright tests, reports WCAG compliance]
+```
 
-- **Website testing**: "Test our login page for accessibility issues"
-- **Performance testing**: "Check the response time of our API endpoints"
+## 🏗️ Project Structure
 
-### 5. Plan Optimization
+```
+agent-planner-agents/
+├── coordination/           # Coordination Agent
+│   ├── __init__.py
+│   └── agent.py           # Main coordinator with delegation
+├── agents/                # Specialized agents
+│   ├── backend_dev/       # Backend Developer Agent
+│   ├── frontend_dev/      # Frontend Developer Agent
+│   ├── designer/          # Designer Agent
+│   ├── research/          # Research Agent
+│   ├── tester/           # Tester Agent
+│   └── plan_optimizer/    # Plan Optimizer Agent
+├── tools/                 # Shared tools and utilities
+│   ├── mcp_tools.py      # MCP integration utilities
+│   └── google_search_tool.py  # Custom search tool
+├── tests/                 # Test suite
+│   ├── test_planning.py   # Planning operations tests
+│   ├── test_integration.py # Full system integration tests
+│   └── test_mcp_tools.py  # MCP connectivity tests
+├── config.py             # Configuration management
+├── diagnostics.py        # System diagnostics script
+├── run.py               # Main entry point
+└── requirements.txt     # Python dependencies
+```
 
-- **Analyze plan**: "Analyze our Project Alpha plan for completeness"
-- **Suggest improvements**: "Suggest improvements to our development workflow"
+## 🔧 Configuration Management
 
-## Delegation Architecture
+The system uses a centralized configuration module (`config.py`) that:
+- Validates environment variables
+- Manages agent configurations
+- Controls MCP server settings
+- Provides configuration summaries
 
-The Coordination Agent has access to all specialized agents as tools. When a user sends a request, the Coordination Agent:
+Run diagnostics to check your configuration:
+```bash
+python diagnostics.py
+```
 
-1. Analyzes the request to determine which specialized agent should handle it
-2. Delegates the task to the appropriate agent
-3. Receives the response from the specialized agent
-4. Formats and returns the final response to the user
+## 🧪 Testing
 
-This delegation pattern allows each agent to focus on its specific domain while providing a unified interface for users.
+### Unit Tests
+```bash
+# Test planning operations
+python -m tests.test_planning
 
-## MCP Integration
+# Test MCP connectivity
+python test_mcp_tools.py --server planning
+```
 
-This system leverages the Model Context Protocol (MCP) for standardized communication between AI agents and external systems:
+### Integration Tests
+```bash
+# Full system integration test
+python -m tests.test_integration
+```
 
-- **Planning System MCP**: For plan and task management
-- **Context7 MCP**: For accessing documentation
-- **Filesystem MCP**: For code management
-- **Playwright MCP**: For automated testing
-- **Web Search MCP**: For research and information gathering
+### Diagnostics
+```bash
+# Check system configuration and dependencies
+python diagnostics.py
+```
 
-## License
+## 🔌 MCP Integration
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+The system leverages MCP for standardized communication:
+
+| MCP Server | Purpose | Configuration |
+|------------|---------|---------------|
+| Planning System | Plan/task management | Requires API token |
+| Filesystem | Code file access | Workspace path |
+| Context7 | Documentation access | Auto-configured |
+| Playwright | Browser automation | Auto-configured |
+| Web Search | Research capabilities | Optional API key |
+
+## 🐛 Troubleshooting
+
+### Common Issues and Solutions
+
+1. **"PLANNING_MCP_PATH does not exist"**
+   - Clone the planning MCP server repository
+   - Update the path in your `.env` file
+
+2. **"API token is required"**
+   - Generate a token from the planning system UI
+   - Add to `.env`: `PLANNING_API_TOKEN=your_token`
+
+3. **Agent initialization failures**
+   - Run `python diagnostics.py` to identify issues
+   - Check that all required npm packages are available
+   - Verify Node.js and Python versions
+
+4. **Search functionality not working**
+   - Ensure `GOOGLE_API_KEY` is set
+   - Optionally set `GOOGLE_SEARCH_ENGINE_ID` for better results
+
+## 📈 Performance Optimization
+
+- Agents are initialized lazily when first needed
+- MCP connections are pooled and reused
+- Error handling ensures graceful degradation
+- Tools are optional - agents work with available resources
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Run the test suite
+6. Submit a pull request
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🔗 Related Projects
+
+- [Agent Planner API](https://github.com/talkingagents/agent-planner) - REST API backend
+- [Agent Planner MCP](https://github.com/talkingagents/agent-planner-mcp) - MCP server interface
+- [Agent Planner UI](https://github.com/talkingagents/agent-planner-ui) - Web interface
+
+## 📞 Support
+
+- Open an issue on GitHub for bugs
+- Check diagnostics first: `python diagnostics.py`
+- Review logs in agent output for debugging
+
+## 🚦 Project Status
+
+✅ **Completed**
+- Core framework and coordination agent
+- All specialized agents implementation
+- Agent-to-agent delegation via AgentTool
+- Planning system integration
+- Error handling and graceful degradation
+- Configuration management
+- Diagnostic tools
+
+🔄 **In Progress**
+- Extended testing coverage
+- Performance optimizations
+- Additional MCP server integrations
+
+📋 **Planned**
+- Multi-agent collaboration patterns
+- Advanced workflow templates
+- Cloud deployment configurations

@@ -1,0 +1,47 @@
+name: agent-planner-agents
+description: ADK Multiagent System with MCP Integration for Software Development
+
+# Agent configuration
+agents:
+  - path: coordination
+    name: Coordination Agent
+    description: Main coordinator that delegates to specialized agents
+  
+  - path: agents/backend_dev
+    name: Backend Developer Agent
+    description: Specializes in server-side implementation
+  
+  - path: agents/frontend_dev
+    name: Frontend Developer Agent
+    description: Specializes in client-side UI development
+  
+  - path: agents/designer
+    name: Designer Agent
+    description: Handles visual and UX design
+  
+  - path: agents/research
+    name: Research Agent
+    description: Performs web research and information gathering
+  
+  - path: agents/tester
+    name: Tester Agent
+    description: Handles automated testing and quality verification
+  
+  - path: agents/plan_optimizer
+    name: Plan Optimizer Agent
+    description: Optimizes and refines project plans
+
+# Environment configuration
+env:
+  GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+  PLANNING_MCP_PATH: ${PLANNING_MCP_PATH}
+  PLANNING_API_URL: ${PLANNING_API_URL}
+  PLANNING_API_TOKEN: ${PLANNING_API_TOKEN}
+  WORKSPACE_PATH: ${WORKSPACE_PATH}
+  GOOGLE_SEARCH_ENGINE_ID: ${GOOGLE_SEARCH_ENGINE_ID}
+  PROGRAMMABLE_SEARCH_ENGINE_ID: ${PROGRAMMABLE_SEARCH_ENGINE_ID}
+
+# Python configuration
+python:
+  version: "3.10"
+  requirements: requirements.txt
